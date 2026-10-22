@@ -96,7 +96,6 @@ const els = {
   heroScreen: document.querySelector("#heroScreen"),
   heroBg: document.querySelector(".hero-bg"),
   mapScreen: document.querySelector("#mapScreen"),
-  backButton: document.querySelector("#backButton"),
   heroOriginSelect: document.querySelector("#heroOriginSelect"),
   heroDestinationSelect: document.querySelector("#heroDestinationSelect"),
   heroSearchButton: document.querySelector("#heroSearchButton"),
@@ -556,7 +555,6 @@ function refreshMenus() {
 }
 
 function bindControls() {
-  els.backButton?.addEventListener("click", showHero);
   els.heroOriginSelect?.addEventListener("change", syncHeroDestinationOptions);
   els.heroDestinationSelect?.addEventListener("change", () => {
     heroState.destination = els.heroDestinationSelect.value;
