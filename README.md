@@ -1,4 +1,14 @@
-# Expressway Fast Charger Miniapp V2
+# Fast Charger V2 — Apps in Toss
+
+앱인토스 전용 화면과 기능을 개발하는 독립 프로젝트입니다.
+
+- 저장소: https://github.com/five-mj/fast-charger-v2-appintoss
+- Vercel 프로젝트명: `fast-charger-v2-appintoss`
+- 시작 기준: 기존 V2의 `4c33cd0` 커밋
+- 현재는 기존 웹 화면을 복제한 기준 버전입니다. 앱인토스 UI 전환과 SDK 연동·검수는 별도 진행합니다.
+- 아래의 기존 배포 URL과 변경 이력은 원본 V2의 참고 기록이며, 이 프로젝트의 배포 대상이 아닙니다.
+
+---
 
 Route-based lowest-price fast charger miniapp.
 
