@@ -8,7 +8,10 @@ window.tossRouteShare = {
   },
   createLink(query) {
     // Always share the released app, even when testing a private bundle.
-    return Share.createLink({ path: `intoss://gogowatercharging?${query}` });
+    return Share.createLink({
+      path: `intoss://gogowatercharging?${query}`,
+      ogImageUrl: 'https://fast-charger-v2-appintoss.vercel.app/assets/new/og-appintoss-20261106.png',
+    });
   },
   share(title, url) { return Share.sendMessage({ message: `${title}\n${url}` }); },
   copy(url) { return Clipboard.setText(url); },

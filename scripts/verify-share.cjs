@@ -18,6 +18,7 @@ async function run(kind,native,initialDestination='속초',search='',tossRouteSh
  assert.equal(bridgeContext.window.tossRouteShare.isAvailable(),true);
  await bridgeContext.window.tossRouteShare.createLink('origin=Seoul&destination=Busan');
  assert.equal(sdkCalls[0].path,'intoss://gogowatercharging?origin=Seoul&destination=Busan');
+ assert.equal(sdkCalls[0].ogImageUrl,'https://fast-charger-v2-appintoss.vercel.app/assets/new/og-appintoss-20261106.png');
  await bridgeContext.window.tossRouteShare.share('Title','https://toss.im/test-share');
  assert.equal(sdkCalls[1].message,'Title\nhttps://toss.im/test-share');
  bridgeContext.getSchemeUri=()=>{throw new Error('Browser')};
@@ -30,7 +31,9 @@ async function run(kind,native,initialDestination='속초',search='',tossRouteSh
  assert.equal((await run('kakao',async()=>{throw {name:'AbortError'}})).status,'');
  const copy=await run('link');assert.equal(copy.status,'링크 복사 성공!');assert.equal(new URL(copy.copied).searchParams.get('destination'),'속초');assert.equal(new URL(copy.copied).searchParams.has('v'),false);
  for(const kind of ['facebook','x']){const result=await run(kind);const link=new URL(result.opened).searchParams.get(kind==='facebook'?'u':'url');assert.match(decodeURIComponent(link),/share\/서울-속초.html/)}
- const page=fs.readFileSync('share/서울-속초.html','utf8');assert.match(page,/og:title" content="서울 → 속초 최저가 급속 충전소/);assert.match(page,/summary_large_image/);assert.match(page,/og-share-20261014.png/);
+ const page=fs.readFileSync('share/서울-속초.html','utf8');assert.match(page,/og:title" content="서울 → 속초 최저가 급속 충전소/);assert.match(page,/summary_large_image/);assert.match(page,/og-appintoss-20261106.png/);
+ const og=fs.readFileSync('assets/new/og-appintoss-20261106.png');
+ assert.equal(og.readUInt32BE(16),1200);assert.equal(og.readUInt32BE(20),600);
  const pending=await run('kakao',async()=>{},'');assert.equal(pending.payload.title,'서울 → 도착지 선택');assert.equal(new URL(pending.payload.url).searchParams.get('view'),'result');assert.equal(new URL(pending.payload.url).searchParams.has('destination'),false);
  const restored=await run('kakao',async()=>{},'속초','?origin=서울&view=result');assert.equal(restored.payload.title,'서울 → 도착지 선택');
  const invalid=await run('kakao',async()=>{},'속초','?origin=서울&destination=서울');assert.equal(invalid.payload.title,'서울 → 도착지 선택');
