@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-async function run(kind,native,initialDestination='속초',search=''){
+async function run(kind,native,initialDestination='속초',search='',tossRouteShare){
  let handler,opened,payload,copied;
  const status={textContent:'',classList:{toggle(){},contains(){return false},add(){},remove(){}},style:{setProperty(){},removeProperty(){}}};
  const navigator={clipboard:{writeText:async url=>{copied=url}}};
@@ -8,10 +8,22 @@ async function run(kind,native,initialDestination='속초',search=''){
  document:{getElementById:()=>status,querySelectorAll:()=>[{dataset:{share:kind},parentElement:{appendChild:node=>{assert.equal(node,status)}},closest:selector=>selector==='.route-share-buttons'?{appendChild:node=>assert.equal(node,status)}:null,addEventListener:(_,fn)=>handler=fn}]},
  navigator,location:{href:'https://vercel-public-5325-20260708.vercel.app/?v=test',origin:'https://vercel-public-5325-20260708.vercel.app',search},
  getOriginOptions:()=>['서울'],getDestinationOptions:()=>['속초'],refreshMenus(){},render(){},showMap(){},
- state:{origin:'서울',destination:initialDestination},window:{open:url=>opened=url},URL,URLSearchParams,clearTimeout(){},setTimeout(){}});
+ state:{origin:'서울',destination:initialDestination},window:{open:url=>opened=url,tossRouteShare},URL,URLSearchParams,clearTimeout(){},setTimeout(){}});
  await handler();return {opened,payload,copied,status:status.textContent};
 }
 (async()=>{
+ const sdkCalls=[];
+ const bridgeContext={window:{},getSchemeUri:()=> 'intoss://gogowatercharging',Share:{createLink:async value=>{sdkCalls.push(value);return 'https://toss.im/test-share'},sendMessage:async value=>sdkCalls.push(value)},Clipboard:{setText:async value=>sdkCalls.push(value)},Device:{openURL:async value=>sdkCalls.push(value)}};
+ vm.runInNewContext(fs.readFileSync('toss-share-entry.js','utf8').replace(/^import .*;\r?\n/,''),bridgeContext);
+ assert.equal(bridgeContext.window.tossRouteShare.isAvailable(),true);
+ await bridgeContext.window.tossRouteShare.createLink('origin=Seoul&destination=Busan');
+ assert.equal(sdkCalls[0].path,'intoss://gogowatercharging?origin=Seoul&destination=Busan');
+ await bridgeContext.window.tossRouteShare.share('Title','https://toss.im/test-share');
+ assert.equal(sdkCalls[1].message,'Title\nhttps://toss.im/test-share');
+ bridgeContext.getSchemeUri=()=>{throw new Error('Browser')};
+ assert.equal(bridgeContext.window.tossRouteShare.isAvailable(),false);
+ const html=fs.readFileSync('index.html','utf8');
+ assert.ok(html.indexOf('src="./toss-share-sdk.js') < html.indexOf('src="./route-share.js'));
  const native=await run('kakao',async()=>{});assert.equal(native.payload.title,'서울 → 속초 최저가 급속 충전소');assert.equal(native.copied,undefined);
  assert.equal((await run('kakao')).status,'이 브라우저에서는 공유창을 지원하지 않습니다.\n링크 복사를 이용해주세요.');
  assert.equal((await run('kakao',async()=>{throw {name:'NotAllowedError'}})).status,'다시 시도해주세요.');
@@ -23,5 +35,23 @@ async function run(kind,native,initialDestination='속초',search=''){
  const restored=await run('kakao',async()=>{},'속초','?origin=서울&view=result');assert.equal(restored.payload.title,'서울 → 도착지 선택');
  const invalid=await run('kakao',async()=>{},'속초','?origin=서울&destination=서울');assert.equal(invalid.payload.title,'서울 → 도착지 선택');
  const pendingFacebook=await run('facebook',undefined,'');assert.match(decodeURIComponent(new URL(pendingFacebook.opened).searchParams.get('u')),/서울-도착지선택.html/);
- console.log('Native share, cancellation, unsupported browser, copy and route preview verified');
+ const calls=[];
+ const toss={isAvailable:()=>true,createLink:async query=>{calls.push(['link',query]);return 'https://toss.im/test-share'},share:async(title,url)=>calls.push(['share',title,url]),copy:async url=>calls.push(['copy',url]),open:async url=>calls.push(['open',url])};
+ await run('kakao',undefined,'속초','',toss);
+ assert.equal(new URLSearchParams(calls[0][1]).get('origin'),'서울');
+ assert.equal(new URLSearchParams(calls[0][1]).get('destination'),'속초');
+ assert.equal(calls[1][2],'https://toss.im/test-share');
+ calls.length=0;
+ await run('link',undefined,'','',toss);
+ assert.equal(new URLSearchParams(calls[0][1]).get('view'),'result');
+ assert.deepEqual(calls[1],['copy','https://toss.im/test-share']);
+ for(const kind of ['facebook','x']){
+   calls.length=0;await run(kind,undefined,'속초','',toss);
+   assert.equal(new URL(calls[1][1]).searchParams.get(kind==='facebook'?'u':'url'),'https://toss.im/test-share');
+ }
+ const failed=await run('kakao',undefined,'속초','',{...toss,createLink:async()=>{throw new Error('network')}});
+ assert.equal(failed.status,'다시 시도해주세요.');assert.equal(failed.copied,undefined);
+ assert.equal((await run('kakao',undefined,'속초','',{...toss,createLink:async()=>undefined})).status,'다시 시도해주세요.');
+ assert.equal((await run('kakao',undefined,'속초','',{...toss,share:async()=>{throw {name:'AbortError'}}})).status,'');
+ console.log('Toss route links, native sharing, copy, external destinations, failures, cancellation and browser fallback verified');
 })();

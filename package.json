@@ -1,0 +1,10 @@
+{
+  "name": "fast-charger-v2-appintoss",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-toss-share.cjs",
+    "test:share": "node scripts/verify-share.cjs"
+  },
+  "dependencies": { "@apps-in-toss/web-framework": "3.0.4" },
+  "devDependencies": { "esbuild": "0.25.12" }
+}

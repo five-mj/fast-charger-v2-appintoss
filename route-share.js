@@ -2,6 +2,7 @@
   const status = document.getElementById('shareStatus');
   let toastTimer;
   let activeButton;
+  let sharing = false;
   function showStatus(message, persistent = false, unsupported = false) {
     clearTimeout(toastTimer);
     status.textContent = message;
@@ -51,6 +52,7 @@
   }
   document.querySelectorAll('[data-share]').forEach(button => {
     button.addEventListener('click', async () => {
+      if (sharing) return;
       activeButton = button;
       const url = shareUrl();
       const title = state.destination ? `${state.origin} → ${state.destination} 최저가 급속 충전소` : `${state.origin} → 도착지 선택`;
@@ -58,6 +60,27 @@
       clearTimeout(toastTimer);
       status.classList.remove('is-visible');
       try {
+      // In Toss, every destination receives a generated miniapp link, not a web URL.
+      // Keep this branch before browser APIs and legacy build-time replacements.
+      if (window.tossRouteShare?.isAvailable()) {
+        sharing = true;
+        const query = new URL(url).searchParams.toString();
+        const tossLink = await window.tossRouteShare.createLink(query);
+        if (typeof tossLink !== 'string' || !/^https:\/\//.test(tossLink)) {
+          throw new Error('Invalid Toss share link');
+        }
+        if (button.dataset.share === 'link') {
+          await window.tossRouteShare.copy(tossLink);
+          showStatus('링크 복사 성공!');
+        } else if (button.dataset.share === 'facebook') {
+          await window.tossRouteShare.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(tossLink)}`);
+        } else if (button.dataset.share === 'x') {
+          await window.tossRouteShare.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(tossLink)}`);
+        } else {
+          await window.tossRouteShare.share(title, tossLink);
+        }
+        return;
+      }
       switch (button.dataset.share) {
         case 'facebook':
           window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(previewUrl)}`, '_blank', 'noopener,noreferrer');
@@ -80,6 +103,8 @@
       }
       } catch (error) {
         if (error.name !== 'AbortError') showStatus('다시 시도해주세요.');
+      } finally {
+        sharing = false;
       }
     });
   });

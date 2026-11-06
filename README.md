@@ -1,5 +1,12 @@
 # Fast Charger V2 — Apps in Toss
 
+## 공유 기능 업데이트: 2026-11-06
+
+- 토스에서는 SDK로 미니앱 공유 링크를 만들고 네이티브 공유창을 엽니다. 출발지·도착지를 유지합니다.
+- 빌드: `npm ci` → `npm run build`. 검증: `npm run test:share`.
+- **개발팀 필수:** 별도 dist 복사 목록에 `toss-share-sdk.js`를 포함해야 합니다.
+- [번들 반영 및 실제 토스 테스트 안내](docs/toss-share-integration.md).
+
 ## 최신 반영: 2026-11-02
 
 - 웹 최종본의 매직독 여부와 무관한 수퍼차저 노출·339원/kWh 차주 전용 요금·카드 태그 정책을 동일하게 반영했습니다.
